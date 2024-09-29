@@ -42,7 +42,7 @@ for (let i = 8; i >= 1; i--) {
 		cell.className = "cell f-" + String.fromCharCode(96 + j) + " r-" + i;
 		cellHolder.appendChild(cell);
 
-		cells[String.fromCharCode(j + 96) + i] = cell;
+		cells[logicalToVisual({ x: j - 1, y: i - 1 })] = cell;
 	}
 }
 
@@ -62,15 +62,17 @@ function renderBoardPieces(positions) {
 	for (let i = 0, k = 8; i < 8; i++, k--) {
 		for (let j = 0; j < 8; j++) {
 
+			let visualPos = logicalToVisual({ x: j, y: i })
+
 			let button = document.createElement("div");
 			button.style.gridArea = `${i + 1}/${j + 1}`;
-			button.className = String.fromCharCode(j + 97) + k + " buttons";
+			button.className = visualPos + " buttons";
 			button.innerHTML = "<div class='fa-solid fa-xmark'></div><div class='fa-solid fa-circle'></div>";
 			pieceHolder.appendChild(button);
 
 			button.addEventListener("click", buttonOnClick)
 
-			buttons[String.fromCharCode(j + 97) + k] = button
+			buttons[visualPos] = button
 
 			if (!positions[i][j]) continue;
 
@@ -78,10 +80,10 @@ function renderBoardPieces(positions) {
 			let pieceImg = getChessPieceImage(positions[i][j]);
 			piece.src = pieceImg;
 			piece.style.gridArea = `${i + 1}/${j + 1}`;
-			piece.className = `${logicalToVisual({ x: j, y: k })} ${pieceImg.slice(-7, -6)}`
+			piece.className = visualPos + " " + pieceImg.slice(-7, -6)
 			pieceHolder.appendChild(piece);
 
-			pieces[String.fromCharCode(j + 97) + k] = piece
+			pieces[visualPos] = piece
 		}
 	}
 };
@@ -91,7 +93,7 @@ function resetAllCells() {
 
 	for (let i = 8; i >= 1; i--) {
 		for (let j = 1; j <= 8; j++) {
-			let pos = String.fromCharCode(96 + j) + i
+			let pos = logicalToVisual({ x: j - 1, y: i - 1 })
 
 			let cell = cells[pos]
 			cell.classList.add(altColor);
@@ -131,11 +133,12 @@ let attackingMoves = []
 async function buttonOnClick(event) {
 	let pos = event.srcElement.closest(".buttons").className.split(" ")[0]
 
-	let attackingMove = attackingMoves.filter(e => pos == e.position)
+	let attackingMove = attackingMoves.find(e => pos === e.position)
+	let availableMove = availableMoves.find(e => pos === e.position)
 
-	if (availableMoves.includes(pos)) {
+	if (availableMove) {
 		let visualPiece = pieces[lastClickedPosition]
-		board = await movePiece(board.gameID, lastClickedPosition, pos)
+		board = await movePiece(board.gameID, lastClickedPosition, pos, null, availableMove.castleTarget)
 		if (!board) return;
 
 		checkGameState()
@@ -145,6 +148,25 @@ async function buttonOnClick(event) {
 		visualPiece.style.gridArea = `${newPos.y + 1}/${newPos.x + 1}`;
 		visualPiece.classList.remove(lastClickedPosition);
 		visualPiece.classList.add(pos);
+
+		if (availableMove.castleTarget) {
+			let castleTarget = pieces[availableMove.castleTarget]
+			let newPosition = ""
+
+			if (availableMove.castleTarget[0].charCodeAt(0) < availableMove.position[0].charCodeAt(0))
+				newPosition = logicalToVisual({ x: newPos.x + 1, y: newPos.y })
+			else
+				newPosition = logicalToVisual({ x: newPos.x - 1, y: newPos.y })
+
+			let logicalNewPos = visualToLogical(newPosition)
+
+			castleTarget.style.gridArea = `${logicalNewPos.y + 1}/${logicalNewPos.x + 1}`
+			castleTarget.classList.remove(availableMove.castleTarget);
+			castleTarget.classList.add(newPosition);
+
+			delete pieces[availableMove.castleTarget]
+			pieces[newPosition] = castleTarget
+		}
 
 		delete pieces[lastClickedPosition]
 		pieces[pos] = visualPiece
@@ -157,10 +179,10 @@ async function buttonOnClick(event) {
 		return;
 	}
 
-	if (attackingMove.length) {
+	if (attackingMove) {
 		let visualPiece = pieces[lastClickedPosition]
-		let targetPiece = pieces[attackingMove[0].killTarget.position]
-		board = await killPiece(board.gameID, lastClickedPosition, pos, attackingMove[0].killTarget.position)
+		let targetPiece = pieces[attackingMove.killTarget]
+		board = await killPiece(board.gameID, lastClickedPosition, pos, attackingMove.killTarget)
 		if (!board) return;
 
 		checkGameState()
@@ -173,8 +195,8 @@ async function buttonOnClick(event) {
 
 		targetPiece.remove()
 
-		if (attackingMove[0]["isEnPassant"])
-			delete pieces[attackingMove[0].killTarget.position]
+		if (attackingMove["isEnPassant"])
+			delete pieces[attackingMove.killTarget]
 
 		delete pieces[lastClickedPosition];
 
@@ -246,7 +268,7 @@ async function buttonOnClick(event) {
 		}
 		else {
 			availableCell(move.position)
-			availableMoves.push(move.position)
+			availableMoves.push(move)
 		}
 	})
 }
@@ -282,8 +304,8 @@ function attackedCell(pos) {
 function checkGameState() {
 	if (board.check) {
 		if (!checkedCell.length) {
-			checkedCell = board.checked
-			cells[board.checked].style.background = "linear-gradient(135deg, hsl(0, 100%, 50%), hsl(0, 100%, 56%))"
+			checkedCell = board.check
+			cells[board.check].style.background = "linear-gradient(135deg, hsl(0, 100%, 50%), hsl(0, 100%, 56%))"
 		}
 	} else {
 		if (checkedCell.length) {
@@ -292,8 +314,11 @@ function checkGameState() {
 		}
 	}
 
-	if(board.checkmate)
-	{
+	if (board.checkmate) {
 		// TODO: Game is in checkmate, do stuff
+	}
+
+	if (board.stalemate) {
+		// TODO: Game is in stalemate, do stuff
 	}
 }

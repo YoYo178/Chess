@@ -107,7 +107,7 @@ export async function getMoves(gameID, piece) {
 	}
 }
 
-export async function movePiece(gameID, piece, newPos) {
+export async function movePiece(gameID, piece, newPos, promoteTo = null, castleTarget = null) {
 	if (!isServerOnline) {
 		return console.error("Cannot move piece because the server is offline.")
 	}
@@ -119,7 +119,7 @@ export async function movePiece(gameID, piece, newPos) {
 				"Accept": "application/json",
 				"Content-Type": "application/json"
 			},
-			body: JSON.stringify({ moveTo: newPos })
+			body: JSON.stringify({ moveTo: newPos, promoteTo, castleTarget })
 		})).json()
 	} catch (error) {
 		await checkServerStatus();
@@ -152,12 +152,15 @@ export function decodeMove(moveStr) {
 
 	moveObj["position"] = moveStr.split(":")[0]
 
+	moveObj["isPromotingMove"] = moveStr.includes("*")
 	moveObj["isPawnDiagonal"] = moveStr.includes("/")
 	moveObj["isAttackableMove"] = moveStr.includes("#")
 	moveObj["isKillingMove"] = moveStr.includes("!")
+	moveObj["isCastlingMove"] = moveStr.includes("$")
 	moveObj["isEnPassant"] = moveStr.includes("^")
 	moveObj["isFriendlyPiece"] = moveStr.includes("@")
-	moveObj["killTarget"] = moveObj.isKillingMove ? { position: moveStr.split("!")[1] } : null
+	moveObj["killTarget"] = moveObj.isKillingMove ? moveStr.split("!")[1].slice(0, 2) : null
+	moveObj["castleTarget"] = moveObj.isCastlingMove ? moveStr.split("$")[1].slice(0, 2) : null
 
 	return moveObj
 }
