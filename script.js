@@ -42,7 +42,7 @@ for (let i = 8; i >= 1; i--) {
 		cell.className = "cell f-" + String.fromCharCode(96 + j) + " r-" + i;
 		cellHolder.appendChild(cell);
 
-		cells[logicalToVisual({ x: j - 1, y: i - 1 })] = cell;
+		cells[logicalToVisual({ x: j - 1, y: 8 - i })] = cell;
 	}
 }
 
