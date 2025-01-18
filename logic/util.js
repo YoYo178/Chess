@@ -147,6 +147,25 @@ export async function killPiece(gameID, piece, newPos, piecePos) {
 	}
 }
 
+export async function getGameStatus(gameID) {
+	if (!isServerOnline) {
+		return console.error("Cannot move piece because the server is offline.")
+	}
+
+	try {
+		return await (await fetch(CHESS_SERVER_URL + "/games/" + gameID, {
+			method: "GET",
+			headers: {
+				"Accept": "application/json",
+				"Content-Type": "application/json"
+			},
+		})).json()
+	} catch (error) {
+		await checkServerStatus();
+		return console.error("An error occured while trying fetch the game's state.", error)
+	}
+}
+
 export function decodeMove(moveStr) {
 	let moveObj = {}
 

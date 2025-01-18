@@ -1,5 +1,5 @@
 import { CHESS_SFX } from "./logic/ChessVariables.js";
-import { getChessPieceImage, makeGlobal, setDebugMode, logicalToVisual, visualToLogical, generateGame, getMoves, movePiece, decodeMove, killPiece, checkServerStatus } from "./logic/util.js";
+import { getChessPieceImage, makeGlobal, setDebugMode, logicalToVisual, visualToLogical, generateGame, getMoves, movePiece, decodeMove, killPiece, checkServerStatus, getGameStatus } from "./logic/util.js";
 import { wrapGrid } from "https://esm.sh/animate-css-grid";
 
 setDebugMode(true);
@@ -13,9 +13,15 @@ splashText.innerHTML = "Loading..."
 splashText.classList.add("splash-text")
 pieceHolder.append(splashText)
 
+let gameID = ""
+
 await checkServerStatus()
 
 let board = await generateGame();
+
+if(board) {
+	gameID = board.gameID;
+}
 
 let cells = {}
 let pieces = {}
@@ -139,7 +145,12 @@ async function buttonOnClick(event) {
 	if (availableMove) {
 		let visualPiece = pieces[lastClickedPosition]
 		board = await movePiece(board.gameID, lastClickedPosition, pos, null, availableMove.castleTarget)
-		if (!board) return;
+
+		console.log(board)
+		if (!board || board.status === "failed") {
+			board = await getGameStatus(gameID);
+			return;
+		}
 
 		checkGameState()
 
@@ -183,7 +194,10 @@ async function buttonOnClick(event) {
 		let visualPiece = pieces[lastClickedPosition]
 		let targetPiece = pieces[attackingMove.killTarget]
 		board = await killPiece(board.gameID, lastClickedPosition, pos, attackingMove.killTarget)
-		if (!board) return;
+		if (!board || board.status === "failed") {
+			board = await getGameStatus(gameID);
+			return;
+		}
 
 		checkGameState()
 
@@ -320,5 +334,9 @@ function checkGameState() {
 
 	if (board.stalemate) {
 		// TODO: Game is in stalemate, do stuff
+	}
+
+	if (board.eligibleForPromotion) {
+		// TODO: Create promotion pop-up and disable all other buttons
 	}
 }
