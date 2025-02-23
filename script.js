@@ -20,7 +20,7 @@ await checkServerStatus()
 let board = await generateGame();
 
 if(board) {
-	gameID = board.gameID;
+	gameID = board.game.gameID;
 }
 
 let cells = {}
@@ -58,7 +58,7 @@ if (board) {
 
 	splashText.remove()
 
-	renderBoardPieces(board.positions)
+	renderBoardPieces(board.game.positions)
 	resetAllCells()
 	resetHoverEffect()
 } else
@@ -144,9 +144,8 @@ async function buttonOnClick(event) {
 
 	if (availableMove) {
 		let visualPiece = pieces[lastClickedPosition]
-		board = await movePiece(board.gameID, lastClickedPosition, pos, null, availableMove.castleTarget)
+		board = await movePiece(gameID, lastClickedPosition, pos, null, availableMove.castleTarget)
 
-		console.log(board)
 		if (!board || board.status === "failed") {
 			board = await getGameStatus(gameID);
 			return;
@@ -193,7 +192,7 @@ async function buttonOnClick(event) {
 	if (attackingMove) {
 		let visualPiece = pieces[lastClickedPosition]
 		let targetPiece = pieces[attackingMove.killTarget]
-		board = await killPiece(board.gameID, lastClickedPosition, pos, attackingMove.killTarget)
+		board = await killPiece(gameID, lastClickedPosition, pos, attackingMove.killTarget)
 		if (!board || board.status === "failed") {
 			board = await getGameStatus(gameID);
 			return;
@@ -234,7 +233,7 @@ async function buttonOnClick(event) {
 		resetHoverEffect()
 		return;
 	}
-	else if (pieces[pos] && !pieces[pos].classList.contains(board.currentTurn[0])) {
+	else if (pieces[pos] && !pieces[pos].classList.contains(board.game.currentTurn[0])) {
 
 		lastClickedPosition = ""
 		availableMoves = []
@@ -261,14 +260,14 @@ async function buttonOnClick(event) {
 		attackingMoves = []
 	}
 
-	if (!pieces[lastClickedPosition || pos].classList.contains(board.currentTurn[0]))
+	if (!pieces[lastClickedPosition || pos].classList.contains(board.game.currentTurn[0]))
 		return;
 
 	resetAllCells()
 	resetHoverEffect()
 	lastClickedPosition = pos;
 
-	let moves = await getMoves(board.gameID, pos)
+	let moves = await getMoves(gameID, pos)
 	if (!moves) return;
 
 	moves = moves.map(decodeMove)
@@ -316,10 +315,10 @@ function attackedCell(pos) {
 }
 
 function checkGameState() {
-	if (board.check) {
+	if (board.game.check) {
 		if (!checkedCell.length) {
-			checkedCell = board.check
-			cells[board.check].style.background = "linear-gradient(135deg, hsl(0, 100%, 50%), hsl(0, 100%, 56%))"
+			checkedCell = board.game.check
+			cells[board.game.check].style.background = "linear-gradient(135deg, hsl(0, 100%, 50%), hsl(0, 100%, 56%))"
 		}
 	} else {
 		if (checkedCell.length) {
@@ -328,15 +327,15 @@ function checkGameState() {
 		}
 	}
 
-	if (board.checkmate) {
+	if (board.game.checkmate) {
 		// TODO: Game is in checkmate, do stuff
 	}
 
-	if (board.stalemate) {
+	if (board.game.stalemate) {
 		// TODO: Game is in stalemate, do stuff
 	}
 
-	if (board.eligibleForPromotion) {
+	if (board.game.eligibleForPromotion) {
 		// TODO: Create promotion pop-up and disable all other buttons
 	}
 }
