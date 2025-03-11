@@ -22,4 +22,4 @@ export const CHESS_SFX = {
 	CHECK: new Audio("")
 }
 
-export const CHESS_SERVER_URL = "http://20.244.46.11/logic/api"
+export const CHESS_SERVER_URL = "https://chess-api.duckdns.org/logic/api"
