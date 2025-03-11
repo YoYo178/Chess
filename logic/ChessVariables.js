@@ -22,4 +22,4 @@ export const CHESS_SFX = {
 	CHECK: new Audio("")
 }
 
-export const CHESS_SERVER_URL = "http://127.0.0.1:3000/api"
+export const CHESS_SERVER_URL = "http://20.244.46.11/logic/api"
