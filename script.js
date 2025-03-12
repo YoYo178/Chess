@@ -6,7 +6,7 @@ setDebugMode(true);
 
 const cellHolder = document.querySelector(".cell-holder");
 const pieceHolder = document.querySelector(".piece-holder");
-wrapGrid(pieceHolder);
+const { forceGridAnimation } = wrapGrid(pieceHolder);
 
 let splashText = document.createElement("div")
 splashText.innerHTML = "Loading..."
@@ -169,6 +169,7 @@ async function buttonOnClick(event) {
 		// Visual position
 		let newPos = visualToLogical(pos)
 		piece.style.gridArea = `${newPos.y + 1}/${newPos.x + 1}`;
+		forceGridAnimation();
 
 		if (availableMove.castleTarget) {
 			let castleTarget = pieces[availableMove.castleTarget]
@@ -209,6 +210,7 @@ async function buttonOnClick(event) {
 		// Visual position
 		let newPos = visualToLogical(pos)
 		piece.style.gridArea = `${newPos.y + 1}/${newPos.x + 1}`;
+		forceGridAnimation();
 
 		targetPiece.remove()
 
