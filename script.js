@@ -1,5 +1,5 @@
 import { CHESS_SFX } from "./logic/ChessVariables.js";
-import { getChessPieceImage, makeGlobal, setDebugMode, logicalToVisual, visualToLogical, generateGame, getMoves, movePiece, decodeMove, killPiece, checkServerStatus, getGameStatus } from "./logic/util.js";
+import { getChessPieceImage, makeGlobal, setDebugMode, logicalToVisual, visualToLogical, generateGame, getMoves, movePiece, decodeMove, killPiece, checkServerStatus, getGameStatus, getChessPieceKey } from "./logic/util.js";
 import { wrapGrid } from "https://esm.sh/animate-css-grid";
 
 setDebugMode(true);
@@ -83,10 +83,11 @@ function renderBoardPieces(positions) {
 			if (!positions[i][j]) continue;
 
 			let piece = document.createElement("img");
-			let pieceImg = getChessPieceImage(positions[i][j]);
-			piece.src = pieceImg;
+
+			piece.src = getChessPieceImage(positions[i][j]);
 			piece.style.gridArea = `${i + 1}/${j + 1}`;
-			piece.className = visualPos + " " + pieceImg.slice(-7, -6)
+			piece.id = getChessPieceKey(positions[i][j]);
+
 			pieceHolder.appendChild(piece);
 
 			pieces[visualPos] = piece
@@ -133,18 +134,30 @@ function resetHoverEffect() {
 }
 
 let lastClickedPosition = ""
+let lastClickedPiece = ""
 let availableMoves = []
 let attackingMoves = []
 
+function resetState() {
+	lastClickedPosition = "";
+	lastClickedPiece = "";
+	availableMoves = [];
+	attackingMoves = [];
+
+	resetAllCells();
+	resetHoverEffect();
+}
+
 async function buttonOnClick(event) {
 	let pos = event.srcElement.closest(".buttons").className.split(" ")[0]
+	let piece = pieces[pos];
 
 	let attackingMove = attackingMoves.find(e => pos === e.position)
 	let availableMove = availableMoves.find(e => pos === e.position)
 
 	if (availableMove) {
-		let visualPiece = pieces[lastClickedPosition]
-		board = await movePiece(gameID, lastClickedPosition, pos, null, availableMove.castleTarget)
+		let piece = pieces[lastClickedPosition];
+		board = await movePiece(gameID, lastClickedPiece, pos, null, availableMove.castleTarget)
 
 		if (!board || board.status === "failed") {
 			board = await getGameStatus(gameID);
@@ -155,9 +168,7 @@ async function buttonOnClick(event) {
 
 		// Visual position
 		let newPos = visualToLogical(pos)
-		visualPiece.style.gridArea = `${newPos.y + 1}/${newPos.x + 1}`;
-		visualPiece.classList.remove(lastClickedPosition);
-		visualPiece.classList.add(pos);
+		piece.style.gridArea = `${newPos.y + 1}/${newPos.x + 1}`;
 
 		if (availableMove.castleTarget) {
 			let castleTarget = pieces[availableMove.castleTarget]
@@ -179,20 +190,15 @@ async function buttonOnClick(event) {
 		}
 
 		delete pieces[lastClickedPosition]
-		pieces[pos] = visualPiece
+		pieces[pos] = piece
 
-		resetAllCells()
-		resetHoverEffect()
-		availableMoves = []
-		attackingMoves = []
-		lastClickedPosition = ""
-		return;
+		return resetState();
 	}
 
 	if (attackingMove) {
-		let visualPiece = pieces[lastClickedPosition]
+		let piece = pieces[lastClickedPosition];
 		let targetPiece = pieces[attackingMove.killTarget]
-		board = await killPiece(gameID, lastClickedPosition, pos, attackingMove.killTarget)
+		board = await killPiece(gameID, lastClickedPiece, pos, attackingMove.killTarget)
 		if (!board || board.status === "failed") {
 			board = await getGameStatus(gameID);
 			return;
@@ -202,72 +208,46 @@ async function buttonOnClick(event) {
 
 		// Visual position
 		let newPos = visualToLogical(pos)
-		visualPiece.style.gridArea = `${newPos.y + 1}/${newPos.x + 1}`;
-		visualPiece.classList.remove(lastClickedPosition);
-		visualPiece.classList.add(pos);
+		piece.style.gridArea = `${newPos.y + 1}/${newPos.x + 1}`;
 
 		targetPiece.remove()
 
 		if (attackingMove["isEnPassant"])
 			delete pieces[attackingMove.killTarget]
 
+
 		delete pieces[lastClickedPosition];
+		pieces[pos] = piece
 
-		pieces[pos] = visualPiece
-
-		resetAllCells()
-		resetHoverEffect()
-		availableMoves = []
-		attackingMoves = []
-		lastClickedPosition = ""
-		return;
+		return resetState();
 	}
 
-	// Empty cell
-	if (!pieces[pos]) {
-		lastClickedPosition = ""
-		availableMoves = []
-		attackingMoves = []
-
-		resetAllCells()
-		resetHoverEffect()
-		return;
-	}
-	else if (pieces[pos] && !pieces[pos].classList.contains(board.game.currentTurn[0])) {
-
-		lastClickedPosition = ""
-		availableMoves = []
-		attackingMoves = []
-
-		resetAllCells()
-		resetHoverEffect()
-		return;
-	}
+	// Empty cell or not this player's turn
+	if (!pieces[pos] || (pieces[pos] && pieces[pos].id[0] !== board.game.currentTurn[0].toUpperCase()))
+		return resetState();
 
 	if (lastClickedPosition.length) {
+		// If user clicked the same piece, then we reset variables AND reset hover states
+		if (lastClickedPosition === pos)
+			return resetState();
 
-		if (lastClickedPosition === pos) {
-			lastClickedPosition = ""
-			availableMoves = []
-			attackingMoves = []
-
-			resetHoverEffect()
-			return resetAllCells();
-		}
-
+		// But if user clicked on a piece then directly on another piece, then we only want to reset
+		// variables and not hover states, so that they still work correctly
 		lastClickedPosition = ""
 		availableMoves = []
 		attackingMoves = []
 	}
 
-	if (!pieces[lastClickedPosition || pos].classList.contains(board.game.currentTurn[0]))
+	// Not their turn
+	if (pieces[lastClickedPosition || pos].id[0] !== board.game.currentTurn[0].toUpperCase())
 		return;
 
 	resetAllCells()
 	resetHoverEffect()
 	lastClickedPosition = pos;
+	lastClickedPiece = piece.id;
 
-	let moves = await getMoves(gameID, pos)
+	let moves = await getMoves(gameID, lastClickedPiece)
 	if (!moves) return;
 
 	moves = moves.map(decodeMove)
