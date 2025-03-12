@@ -1,5 +1,7 @@
 import { CHESS_PIECE_UNICODE, CHESS_SERVER_URL } from "./ChessVariables.js";
 
+let usedPieceKeys = [];
+
 export function getChessPieceImage(strPiece) {
 	let str = "./assets/chess_pieces/";
 
@@ -41,6 +43,67 @@ export function getChessPieceImage(strPiece) {
 	str += ".svg";
 
 	return str;
+}
+
+export function getChessPieceKey(strPiece) {
+
+	if (usedPieceKeys.length >= 32)
+		usedPieceKeys = [];
+
+	const pieceCode = strPiece.charCodeAt(0);
+	let str = [];
+	let usedIndex = 1;
+
+	if (pieceCode >= CHESS_PIECE_UNICODE.BLACK_KING && pieceCode <= CHESS_PIECE_UNICODE.BLACK_PAWN) {
+		str.push("B_");
+	} else {
+		str.push("W_");
+	}
+
+	switch (pieceCode) {
+		case CHESS_PIECE_UNICODE.BLACK_KING:
+		case CHESS_PIECE_UNICODE.WHITE_KING:
+			str.push("K");
+			break;
+
+		case CHESS_PIECE_UNICODE.BLACK_QUEEN:
+		case CHESS_PIECE_UNICODE.WHITE_QUEEN:
+			str.push("Q");
+			break;
+
+		case CHESS_PIECE_UNICODE.BLACK_ROOK:
+		case CHESS_PIECE_UNICODE.WHITE_ROOK:
+			str.push("R");
+			break;
+
+		case CHESS_PIECE_UNICODE.BLACK_BISHOP:
+		case CHESS_PIECE_UNICODE.WHITE_BISHOP:
+			str.push("B");
+			break;
+
+		case CHESS_PIECE_UNICODE.BLACK_KNIGHT:
+		case CHESS_PIECE_UNICODE.WHITE_KNIGHT:
+			str.push("N");
+			break;
+
+		case CHESS_PIECE_UNICODE.BLACK_PAWN:
+		case CHESS_PIECE_UNICODE.WHITE_PAWN:
+			str.push("P");
+			break;
+	}
+
+	str.push(String(usedIndex))
+
+	let finalString = str.join("");
+
+	while (usedPieceKeys.includes(finalString) && usedIndex < 8) {
+		usedIndex++;
+		str[str.length - 1] = String(usedIndex);
+		finalString = str.join("");
+	}
+
+	usedPieceKeys.push(finalString)
+	return finalString;
 }
 
 export function logicalToVisual(pos) {
