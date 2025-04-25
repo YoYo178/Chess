@@ -3,4 +3,4 @@
 
 # Chess
 This project is a simple chessboard interface built with HTML, CSS, and JavaScript.
-It allows two players to fully play a chess game on the same device. Focused on core gameplay, it provides a straightforward interface for users to directly engage with the game, with future plans to implement a game creation and sharing system; See [chess-react](https://github.com/YoYo178/chess-react).
+It allows two players to fully play a chess game on the same device. Focused on core gameplay, it provides a straightforward interface for users to directly engage with the game, with future plans to implement a game creation and sharing system.
