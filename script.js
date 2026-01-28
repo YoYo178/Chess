@@ -1,6 +1,6 @@
 import { CHESS_SFX } from "./logic/ChessVariables.js";
 import { getChessPieceImage, makeGlobal, setDebugMode, logicalToVisual, visualToLogical, generateGame, getMoves, movePiece, decodeMove, killPiece, checkServerStatus, getGameStatus, getChessPieceKey } from "./logic/util.js";
-import { wrapGrid } from "https://unpkg.com/animate-css-grid@latest";
+import { wrapGrid } from "https://esm.sh/gh/aholachek/animate-css-grid";
 
 setDebugMode(true);
 
@@ -19,7 +19,7 @@ await checkServerStatus()
 
 let board = await generateGame();
 
-if(board) {
+if (board) {
 	gameID = board.game.gameID;
 }
 
