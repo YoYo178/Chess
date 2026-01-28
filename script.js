@@ -1,6 +1,6 @@
 import { CHESS_SFX } from "./logic/ChessVariables.js";
 import { getChessPieceImage, makeGlobal, setDebugMode, logicalToVisual, visualToLogical, generateGame, getMoves, movePiece, decodeMove, killPiece, checkServerStatus, getGameStatus, getChessPieceKey } from "./logic/util.js";
-import { wrapGrid } from "https://esm.sh/animate-css-grid";
+import { wrapGrid } from "https://unpkg.com/animate-css-grid@latest";
 
 setDebugMode(true);
 
